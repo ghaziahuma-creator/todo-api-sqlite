@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
+app.use(express.json());
+
 app.get("/", (req, res) => {
     res.send({
   "name": "Task API",
@@ -36,7 +38,7 @@ done : false
 }]
 
 app.get("/tasks",(req, res) => {
-res.send(tasks);
+res.status(200).json(tasks);
 })
 
 app.get("/tasks/:id",(req, res) => {
@@ -47,8 +49,28 @@ if(!task){
         "error": `Task ${id} not found `
     })
 }
-
 res.send({
     task
 })
 })
+
+app.post("/tasks", (req, res) => {
+    const { title } = req.body;
+
+    if (!title || title.trim() === "") {
+        return res.status(400).json({
+            error: "Title is required"
+        });
+    }
+
+    const newTask = {
+        id: tasks.length + 1,
+        title: title,
+        done: false
+    };
+
+    tasks.push(newTask);
+
+    res.status(201).json(newTask);
+});
+
