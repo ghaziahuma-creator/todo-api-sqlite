@@ -74,3 +74,61 @@ app.post("/tasks", (req, res) => {
     res.status(201).json(newTask);
 });
 
+app.delete("/tasks/:id", (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+
+        tasks = tasks.filter((task) => task.id != id);
+
+        res.send({
+            status: 200,
+            tasks
+        });
+    } catch (error) {
+        res.send({
+            status: 401,
+            message: error.message
+        });
+    }
+});
+
+app.put("/tasks/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const task = req.body;
+
+    const taskToBeUpdated = tasks.find((task) => task.id === id);
+
+    if (!taskToBeUpdated) {
+        return res.status(404).json({
+            error: `Task ${id} not found`
+        });
+    }
+
+    if (!task || Object.keys(task).length === 0) {
+        return res.status(400).json({
+            error: "Request body cannot be empty"
+        });
+    }
+
+    if (task.title !== undefined) {
+        if (typeof task.title !== "string" || task.title.trim() === "") {
+            return res.status(400).json({
+                error: "Title must be a non-empty string"
+            });
+        }
+
+        taskToBeUpdated.title = task.title;
+    }
+
+    if (task.done !== undefined) {
+        if (typeof task.done !== "boolean") {
+            return res.status(400).json({
+                error: "Done must be a boolean"
+            });
+        }
+
+        taskToBeUpdated.done = task.done;
+    }
+
+    res.status(200).json(taskToBeUpdated);
+});
