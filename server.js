@@ -9,7 +9,7 @@ const openapiFile = fs.readFileSync('./openapi.yaml', 'utf8');
 const openapiDocument = yaml.parse(openapiFile);
 
 app.use(
-    '/api-docs',
+    '/docs',
     swaggerUiExpress.serve,
     swaggerUiExpress.setup(openapiDocument)
 );
