@@ -1,0 +1,237 @@
+
+openapi: 3.0.0
+
+info:
+  title: Task API
+  version: 1.0.0
+  description: A simple CRUD API for managing tasks.
+
+servers:
+  - url: http://localhost:3000
+
+paths:
+
+  /:
+    get:
+      summary: Get API information
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Task API
+                  version:
+                    type: string
+                    example: "1.0"
+                  endpoints:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - /tasks
+
+  /health:
+    get:
+      summary: Check API health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /tasks:
+    get:
+      summary: Get all tasks
+      responses:
+        '200':
+          description: List of all tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+    post:
+      summary: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  example: Buy milk
+
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+        '400':
+          description: Title is missing or empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{id}:
+    get:
+      summary: Get a task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      responses:
+        '200':
+          description: Task found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Buy groceries
+                done:
+                  type: boolean
+                  example: true
+
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+        '400':
+          description: Invalid or empty request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+
+        '401':
+          description: Error while deleting task
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+
+components:
+
+  schemas:
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: JS
+        done:
+          type: boolean
+          example: false
+      required:
+        - id
+        - title
+        - done
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Task 99 not found
+
