@@ -65,7 +65,7 @@ res.status(200).json(tasks);
 
 app.get("/tasks/:id",(req, res) => {
 const id = parseInt(req.params.id);
-const task = tasks.find((task)=> task.id === id);
+const task = db.prepare(`SELECT * FROM tasks WHERE id = ${id}`).get();
 if(!task){
     res.status(404).json({
         "error": `Task ${id} not found `
