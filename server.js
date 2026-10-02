@@ -20,7 +20,6 @@ db.exec(`
 
 const result = db.prepare("SELECT COUNT(*) AS count FROM tasks").get();
 
-console.log(result.count);
 
 if (result.count === 0){
 db.exec(`
@@ -37,7 +36,6 @@ app.use(
     swaggerUiExpress.setup(openapiDocument)
 );
 
-console.log(db.prepare("SELECT * FROM tasks").all());
 
 app.use(express.json());
 
@@ -53,9 +51,7 @@ app.get("/health",(req, res) => {
  res.send({ "status": "ok" } )
 })
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+
 
 
 app.get("/tasks",(req, res) => {
@@ -77,7 +73,8 @@ res.send({
 })
 
 app.post("/tasks", (req, res) => {
-    const { title } = req.body;
+    try {
+         const { title } = req.body;
 
     if (!title || title.trim() === "") {
         return res.status(400).json({
@@ -85,16 +82,21 @@ app.post("/tasks", (req, res) => {
         });
     }
 
-    const newTask = {
-        id: tasks.length + 1,
-        title: title,
-        done: false
-    };
+    const newtTask = db.prepare(`INSERT INTO tasks (title, done) VALUES (?, 0)`).run(title);
 
-    tasks.push(newTask);
+    const newTaskId = newtTask.lastInsertRowid;
 
-    res.status(201).json(newTask);
+    const task = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(newTaskId)
+     
+    res.status(201).json({
+        task
+    })
+    } catch (error) {
+        res.status(405).json({message: error.message})
+    }
+   
 });
+
 
 app.delete("/tasks/:id", (req, res) => {
     try {
@@ -153,4 +155,8 @@ app.put("/tasks/:id", (req, res) => {
     }
 
     res.status(200).json(taskToBeUpdated);
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
