@@ -4,15 +4,40 @@ const PORT = 3000;
 const yaml = require('yaml');
 const swaggerUiExpress = require('swagger-ui-express');
 const fs = require('fs');
+const Database = require('better-sqlite3');
+const db = new Database("tasks.db");
 
 const openapiFile = fs.readFileSync('./openapi.yaml', 'utf8');
 const openapiDocument = yaml.parse(openapiFile);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        done INTEGER CHECK (done IN (0, 1))
+    )
+`);
+
+const result = db.prepare("SELECT COUNT(*) AS count FROM tasks").get();
+
+console.log(result.count);
+
+if (result.count === 0){
+db.exec(`
+    INSERT INTO tasks (title, done) VALUES ('Nextjs', 0);
+    INSERT INTO tasks (title, done) VALUES ('LMS', 0);
+    INSERT INTO tasks (title, done) VALUES ('React', 1);
+`);
+}
+
 
 app.use(
     '/docs',
     swaggerUiExpress.serve,
     swaggerUiExpress.setup(openapiDocument)
 );
+
+console.log(db.prepare("SELECT * FROM tasks").all());
 
 app.use(express.json());
 
@@ -32,24 +57,9 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-let tasks=[
-{
-id:1,
-title:"JS",
-done : false
-},
-{
-id:2,
-title:"React",
-done : true
-},
-{
-id:3,
-title:"Node",
-done : false
-}]
 
 app.get("/tasks",(req, res) => {
+    const tasks = db.prepare(`SELECT * FROM  tasks`).all();
 res.status(200).json(tasks);
 })
 
