@@ -10,6 +10,7 @@ const db = new Database("tasks.db");
 const openapiFile = fs.readFileSync('./openapi.yaml', 'utf8');
 const openapiDocument = yaml.parse(openapiFile);
 
+
 db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY,
@@ -28,6 +29,9 @@ db.exec(`
     INSERT INTO tasks (title, done) VALUES ('React', 1);
 `);
 }
+
+console.log("Database count:", db.prepare("SELECT COUNT(*) AS count FROM tasks").get());
+console.log("Database path:", require("path").resolve("tasks.db"));
 
 
 app.use(
@@ -88,6 +92,7 @@ app.post("/tasks", (req, res) => {
 
     const task = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(newTaskId)
      
+
     res.status(201).json({
         task
     })
@@ -102,12 +107,17 @@ app.delete("/tasks/:id", (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        tasks = tasks.filter((task) => task.id != id);
+       const taskToBeDeleted = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(id);
 
-        res.send({
-            status: 200,
-            tasks
-        });
+       if(!taskToBeDeleted){
+        res.status(404).json({
+            "message" : "Task does not exist"
+        })
+       }
+
+    db.prepare(`DELETE FROM tasks WHERE id = ? `).run(id)  
+
+        res.status(204).send();
     } catch (error) {
         res.send({
             status: 401,
@@ -120,13 +130,14 @@ app.put("/tasks/:id", (req, res) => {
     const id = parseInt(req.params.id);
     const task = req.body;
 
-    const taskToBeUpdated = tasks.find((task) => task.id === id);
+    const taskToBeUpdated = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(id);
 
     if (!taskToBeUpdated) {
         return res.status(404).json({
             error: `Task ${id} not found`
         });
     }
+
 
     if (!task || Object.keys(task).length === 0) {
         return res.status(400).json({
@@ -135,26 +146,16 @@ app.put("/tasks/:id", (req, res) => {
     }
 
     if (task.title !== undefined) {
-        if (typeof task.title !== "string" || task.title.trim() === "") {
-            return res.status(400).json({
-                error: "Title must be a non-empty string"
-            });
-        }
-
-        taskToBeUpdated.title = task.title;
+           db.prepare(`UPDATE tasks SET title = ? WHERE id = ? `).run(task.title,  id );
     }
 
     if (task.done !== undefined) {
-        if (typeof task.done !== "boolean") {
-            return res.status(400).json({
-                error: "Done must be a boolean"
-            });
-        }
-
-        taskToBeUpdated.done = task.done;
+          db.prepare(`UPDATE tasks SET done = ? WHERE id = ? `).run(task.done,  id );
     }
 
-    res.status(200).json(taskToBeUpdated);
+    const updatedTask = db.prepare(`SELECT * FROM tasks WHERE id = ?`).get(id);
+
+    res.status(200).json(updatedTask);
 });
 
 app.listen(PORT, () => {
